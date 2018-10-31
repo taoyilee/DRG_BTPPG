@@ -1,0 +1,5 @@
+set sysroot /mnt/sda1/tylee/tizen-studio/tools/smart-build-interface/../../platforms/tizen-2.3.1/wearable/rootstraps/wearable-2.3.1-emulator.core
+set debug-file-directory /mnt/sda1/tylee/tizen-studio/tools/smart-build-interface/../../platforms/tizen-2.3.1/wearable/rootstraps/wearable-2.3.1-emulator.core/usr/lib/debug
+set solib-search-path /mnt/sda1/tylee/workspace/UIBuilderSingleView/Debug
+dir /mnt/sda1/tylee/tizen-studio/tools/smart-build-interface/../../platforms/tizen-2.3.1/wearable/rootstraps/wearable-2.3.1-emulator.core/usr/src/debug
+sharedlibrary
