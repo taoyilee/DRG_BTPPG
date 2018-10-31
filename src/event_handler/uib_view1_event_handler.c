@@ -12,6 +12,8 @@
 #include <sensor.h>
 #include <device/power.h>
 
+#define FONT_SIZE 20
+#define SENSOR_FREQ 10
 char time_file[256];
 bool flag = false; //To check if the data is recorded
 
@@ -59,15 +61,43 @@ example_sensor_callback(sensor_h sensor, sensor_event_s *event, uib_view1_view_c
     */
     sensor_type_e type;
     sensor_get_type(sensor, &type);
-    char *formatted_label = (char*)malloc(50 * sizeof(char));
+    char *formatted_label = (char*)malloc(256 * sizeof(char));
     if (type == SENSOR_HRM) {
-		sprintf(formatted_label, "HR=%3d",(int) event->values[0]);
-		elm_object_text_set(user_data->v0, formatted_label);
+		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>HR=%3d</font>", FONT_SIZE,(int) event->values[0]);
+		elm_object_text_set(user_data->hrm_data, formatted_label);
     }
     if (type == SENSOR_HRM_LED_GREEN) {
-		sprintf(formatted_label, "%.2f",event->values[0]);
-		elm_object_text_set(user_data->v1, formatted_label);
+		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font>", FONT_SIZE,event->values[0]);
+		elm_object_text_set(user_data->ppg_green, formatted_label);
     }
+    if (type == SENSOR_ACCELEROMETER) {
+		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font>", FONT_SIZE,event->values[0]);
+		elm_object_text_set(user_data->accel_x, formatted_label);
+		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font>", FONT_SIZE,event->values[1]);
+		elm_object_text_set(user_data->accel_y, formatted_label);
+		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font>", FONT_SIZE,event->values[2]);
+		elm_object_text_set(user_data->accel_z, formatted_label);
+    }
+    if (type == SENSOR_GYROSCOPE) {
+    		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font>", FONT_SIZE,event->values[0]);
+    		elm_object_text_set(user_data->gyro_x, formatted_label);
+    		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font>", FONT_SIZE,event->values[1]);
+    		elm_object_text_set(user_data->gyro_y, formatted_label);
+    		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font>", FONT_SIZE,event->values[2]);
+    		elm_object_text_set(user_data->gyro_z, formatted_label);
+        }
+    if (type == SENSOR_PRESSURE) {
+    		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font/>", FONT_SIZE,event->values[0]);
+    		elm_object_text_set(user_data->baro, formatted_label);
+        }
+    if (type == SENSOR_GRAVITY) {
+    		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font/>", FONT_SIZE,event->values[0]);
+    		elm_object_text_set(user_data->gravity_x, formatted_label);
+    		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font/>", FONT_SIZE,event->values[1]);
+    		elm_object_text_set(user_data->gravity_y, formatted_label);
+    		sprintf(formatted_label, "<font=Tizen:style=Regular font_size=%d>%.2f</font/>", FONT_SIZE,event->values[2]);
+			elm_object_text_set(user_data->gravity_z, formatted_label);
+        }
 }
 
 Eina_Bool
@@ -85,7 +115,7 @@ start_sensor(sensor_type_e  sensor_type, uib_view1_view_context *vc){
 	sensor_get_default_sensor(sensor_type, &sensor);
 	sensor_listener_h listener;
 	sensor_create_listener(sensor, &listener);
-	sensor_listener_set_event_cb(listener, 10, example_sensor_callback, vc); //25Hz
+	sensor_listener_set_event_cb(listener, 1000/SENSOR_FREQ, example_sensor_callback, vc); //25Hz
 	sensor_listener_set_option(listener, SENSOR_OPTION_ALWAYS_ON);
 	sensor_listener_start(listener);
 	//End the sensors after the "recording time".
@@ -127,66 +157,50 @@ void view1_start_stop_onclicked(uib_view1_view_context *vc, Evas_Object *obj, vo
 			} else{
 				start_sensor(sensor_type_HRM, vc);
 			}
-//
-//			//ACC
-//			bool supported_ACC = false;
-//			sensor_type_e sensor_type_ACC = SENSOR_ACCELEROMETER;
-//			sensor_is_supported(sensor_type_ACC, &supported_ACC);
-//			if (!supported_ACC) {
-//				char sensor_name_ACC[256] = "ACC";
-//				sensor_not_supported(sensor_name_ACC);
-//			} else{
-//				start_sensor(sensor_type_ACC);
-//			}
-//			//Gravity
-//			bool supported_Gravity = false;
-//			sensor_type_e sensor_type_Gravity = SENSOR_GRAVITY;
-//			sensor_is_supported(sensor_type_Gravity, &supported_Gravity);
-//			if (!supported_Gravity) {
-//				char sensor_name_Gravity[256] = "Gravity";
-//				sensor_not_supported(sensor_name_Gravity);
-//			} else{
-//				start_sensor(sensor_type_Gravity);
-//			}
-//
-//			//Gyroscope
-//			bool supported_Gyro = false;
-//			sensor_type_e sensor_type_Gyro = SENSOR_GYROSCOPE;
-//			sensor_is_supported(sensor_type_Gyro, &supported_Gyro);
-//			if (!supported_Gyro) {
-//				char sensor_name_Gyro[256] = "Gyro";
-//				sensor_not_supported(sensor_name_Gyro);
-//			} else{
-//				start_sensor(sensor_type_Gyro);
-//			}
-//
-//			//Atmospheric pressure
-//			bool supported_Pres = false;
-//			sensor_type_e sensor_type_Pres = SENSOR_PRESSURE;
-//			sensor_is_supported(sensor_type_Pres, &supported_Pres);
-//			if (!supported_Pres) {
-//				char sensor_name_Pres[256] = "Pressure";
-//				sensor_not_supported(sensor_name_Pres);
-//			} else{
-//				start_sensor(sensor_type_Pres);
-//			}
 
+			//ACC
+			bool supported_ACC = false;
+			sensor_type_e sensor_type_ACC = SENSOR_ACCELEROMETER;
+			sensor_is_supported(sensor_type_ACC, &supported_ACC);
+			if (!supported_ACC) {
+				char sensor_name_ACC[256] = "ACC";
+				sensor_not_supported(sensor_name_ACC);
+			} else{
+				start_sensor(sensor_type_ACC, vc);
+			}
+			//Gravity
+			bool supported_Gravity = false;
+			sensor_type_e sensor_type_Gravity = SENSOR_GRAVITY;
+			sensor_is_supported(sensor_type_Gravity, &supported_Gravity);
+			if (!supported_Gravity) {
+				char sensor_name_Gravity[256] = "Gravity";
+				sensor_not_supported(sensor_name_Gravity);
+			} else{
+				start_sensor(sensor_type_Gravity, vc);
+			}
 
-//	bool supported = false;
-//	sensor_is_supported(SENSOR_HRM, &supported);
-//	if (!supported) {
-//		elm_object_text_set(vc->v0, "HRM not supported");
-//	}else{
-//		sensor_h sensor;
-//		sensor_get_default_sensor(SENSOR_HRM, &sensor);
-//		sensor_listener_h listener;
-//		sensor_create_listener(sensor, &listener);
-//		/* Register callback */
-//
-//		sensor_listener_set_event_cb(listener, 10, example_sensor_callback, vc);
-//		sensor_listener_start(listener);
-//		sensor_listener_set_interval(listener, 10);
-//	}
+			//Gyroscope
+			bool supported_Gyro = false;
+			sensor_type_e sensor_type_Gyro = SENSOR_GYROSCOPE;
+			sensor_is_supported(sensor_type_Gyro, &supported_Gyro);
+			if (!supported_Gyro) {
+				char sensor_name_Gyro[256] = "Gyro";
+				sensor_not_supported(sensor_name_Gyro);
+			} else{
+				start_sensor(sensor_type_Gyro, vc);
+			}
+
+			//Atmospheric pressure
+			bool supported_Pres = false;
+			sensor_type_e sensor_type_Pres = SENSOR_PRESSURE;
+			sensor_is_supported(sensor_type_Pres, &supported_Pres);
+			if (!supported_Pres) {
+				char sensor_name_Pres[256] = "Pressure";
+				sensor_not_supported(sensor_name_Pres);
+			} else{
+				start_sensor(sensor_type_Pres, vc);
+			}
+
 
 }
 

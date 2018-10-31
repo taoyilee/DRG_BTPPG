@@ -1,5 +1,11 @@
 #include "app_main.h"
 #include "uib_app_manager.h"
+#include <bluetooth.h>
+
+#include <dlog.h>
+#include <glib.h> /* For GList */
+#define DRG_LOG_TAG "DRG"
+
 
 /* app event callbacks */
 static bool _on_create_cb(void *user_data);
@@ -77,6 +83,76 @@ app_get_resource(const char *res_file_in, char *res_path_out, int res_path_max)
 }
 
 
+void
+adapter_device_discovery_state_changed_cb(int result, bt_adapter_device_discovery_state_e discovery_state,
+                                          bt_adapter_device_discovery_info_s *discovery_info, void* user_data)
+{
+    if (result != BT_ERROR_NONE) {
+        dlog_print(DLOG_ERROR, DRG_LOG_TAG, "[adapter_device_discovery_state_changed_cb] failed! result(%d).", result);
+
+        return;
+    }
+    GList** searched_device_list = (GList**)user_data;
+    switch (discovery_state) {
+    case BT_ADAPTER_DEVICE_DISCOVERY_STARTED:
+        dlog_print(DLOG_INFO, DRG_LOG_TAG, "BT_ADAPTER_DEVICE_DISCOVERY_STARTED");
+        break;
+    case BT_ADAPTER_DEVICE_DISCOVERY_FINISHED:
+        dlog_print(DLOG_INFO, DRG_LOG_TAG, "BT_ADAPTER_DEVICE_DISCOVERY_FINISHED");
+        break;
+    case BT_ADAPTER_DEVICE_DISCOVERY_FOUND:
+        dlog_print(DLOG_INFO, DRG_LOG_TAG, "BT_ADAPTER_DEVICE_DISCOVERY_FOUND");
+        if (discovery_info != NULL) {
+            dlog_print(DLOG_INFO, DRG_LOG_TAG, "Device Address: %s", discovery_info->remote_address);
+            //dlog_print(DLOG_INFO, DRG_LOG_TAG, "Device Name is: %s", discovery_info->remote_name);
+            bt_adapter_device_discovery_info_s * new_device_info = malloc(sizeof(bt_adapter_device_discovery_info_s));
+            if (new_device_info != NULL) {
+                memcpy(new_device_info, discovery_info, sizeof(bt_adapter_device_discovery_info_s));
+                new_device_info->remote_address = strdup(discovery_info->remote_address);
+                new_device_info->remote_name = strdup(discovery_info->remote_name);
+                *searched_device_list = g_list_append(*searched_device_list, (gpointer)new_device_info);
+            }
+        }
+        break;
+    }
+}
+
+/* Server address for connecting */
+char *bt_server_address = NULL;
+const char *remote_server_name = "";
+
+bool
+adapter_bonded_device_cb(bt_device_info_s *device_info, void *user_data)
+{
+    if (device_info == NULL)
+        return true;
+    if (!strcmp(device_info->remote_name, (char*)user_data)) {
+        dlog_print(DLOG_INFO, DRG_LOG_TAG, "The server device is found in bonded device list. address(%s)",
+                   device_info->remote_address);
+        bt_server_address = strdup(device_info->remote_address);
+        /* If you want to stop iterating, you can return "false" */
+    }
+    /* Get information about bonded device */
+    int count_of_bonded_device = 1;
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "Get information about the bonded device(%d)", count_of_bonded_device);
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "remote address = %s.", device_info->remote_address);
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "remote name = %s.", device_info->remote_name);
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "service count = %d.", device_info->service_count);
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "bonded?? %d.", device_info->is_bonded);
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "connected?? %d.", device_info->is_connected);
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "authorized?? %d.", device_info->is_authorized);
+
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "major_device_class %d.", device_info->bt_class.major_device_class);
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "minor_device_class %d.", device_info->bt_class.minor_device_class);
+    dlog_print(DLOG_INFO, DRG_LOG_TAG, "major_service_class_mask %d.", device_info->bt_class.major_service_class_mask);
+    count_of_bonded_device++;
+
+    /* Keep iterating */
+
+    return true;
+}
+
+
 static bool _on_create_cb(void *user_data)
 {
 	/*
@@ -86,6 +162,96 @@ static bool _on_create_cb(void *user_data)
 	uib_app_manager_st* app_manager = uib_app_manager_get_instance();
 
 	app_manager->initialize();
+
+	bt_error_e ret;
+
+	ret = bt_initialize();
+	if (ret != BT_ERROR_NONE) {
+	    dlog_print(DLOG_ERROR, DRG_LOG_TAG, "[bt_initialize] failed.");
+	}else{
+		dlog_print(DLOG_INFO, DRG_LOG_TAG, "[bt_initialize] succeeded.");
+	}
+	bt_adapter_state_e adapter_state;
+	/* Check whether the Bluetooth adapter is enabled */
+	ret = bt_adapter_get_state(&adapter_state);
+	if (ret != BT_ERROR_NONE) {
+	    dlog_print(DLOG_ERROR, DRG_LOG_TAG, "[bt_adapter_get_state] failed");
+	}
+	/* If the Bluetooth adapter is not enabled */
+	if (adapter_state == BT_ADAPTER_DISABLED)
+	    dlog_print(DLOG_ERROR, DRG_LOG_TAG, "Bluetooth adapter is not enabled. You should enable Bluetooth!!");
+
+
+	if (adapter_state == BT_ADAPTER_ENABLED) {
+		dlog_print(DLOG_INFO, DRG_LOG_TAG, "[adapter_state] Bluetooth is enabled!");
+
+		/* Get information about Bluetooth adapter */
+		char *local_address = NULL;
+		bt_adapter_get_address(&local_address);
+		dlog_print(DLOG_INFO, DRG_LOG_TAG, "[adapter_state] Adapter address: %s.", local_address);
+		if (local_address)
+			free(local_address);
+		char *local_name;
+		bt_adapter_get_name(&local_name);
+		dlog_print(DLOG_INFO, DRG_LOG_TAG, "[adapter_state] Adapter name: %s.", local_name);
+		if (local_name)
+			free(local_name);
+		/* Visibility mode of the Bluetooth device */
+		bt_adapter_visibility_mode_e mode;
+		/*
+		   Duration until the visibility mode is changed
+		   so that other devices cannot find your device
+		*/
+		int duration = 1;
+		bt_adapter_get_visibility(&mode, &duration);
+		switch (mode) {
+		case BT_ADAPTER_VISIBILITY_MODE_NON_DISCOVERABLE:
+			dlog_print(DLOG_INFO, DRG_LOG_TAG,
+					   "[adapter_state] Visibility: NON_DISCOVERABLE");
+			break;
+		case BT_ADAPTER_VISIBILITY_MODE_GENERAL_DISCOVERABLE:
+			dlog_print(DLOG_INFO, DRG_LOG_TAG,
+					   "[adapter_state] Visibility: GENERAL_DISCOVERABLE");
+			break;
+		case BT_ADAPTER_VISIBILITY_MODE_LIMITED_DISCOVERABLE:
+			dlog_print(DLOG_INFO, DRG_LOG_TAG,
+					   "[adapter_state] Visibility: LIMITED_DISCOVERABLE");
+			break;
+		}
+	} else {
+		dlog_print(DLOG_INFO, DRG_LOG_TAG, "[adapter_state] Bluetooth is disabled!");
+		/*
+		   When you try to get device information
+		   by invoking bt_adapter_get_name(), bt_adapter_get_address(),
+		   or bt_adapter_get_visibility(), BT_ERROR_NOT_ENABLED occurs
+		*/
+	}
+//	GList *devices_list = NULL;
+//	ret = bt_adapter_set_device_discovery_state_changed_cb(adapter_device_discovery_state_changed_cb,
+//	                                                       (void*)&devices_list);
+//
+//	if (ret != BT_ERROR_NONE)
+//	    dlog_print(DLOG_ERROR, DRG_LOG_TAG, "[bt_adapter_set_device_discovery_state_changed_cb] failed.");
+
+
+	/* Classic Bluetooth */
+//	ret = bt_adapter_start_device_discovery();
+//	if (ret != BT_ERROR_NONE)
+//		    dlog_print(DLOG_ERROR, DRG_LOG_TAG, "[bt_adapter_start_device_discovery] failed.");
+
+//	ret = bt_device_create_bond("00:1A:7D:DA:71:13");
+//	if (ret != BT_ERROR_NONE) {
+//	    dlog_print(DLOG_ERROR, DRG_LOG_TAG, "[bt_device_create_bond] failed.");
+//	} else {
+//	    dlog_print(DLOG_INFO, DRG_LOG_TAG, "[bt_device_create_bond] succeeded. device_bond_created_cb callback will be called.");
+//	}
+	ret = bt_adapter_foreach_bonded_device(adapter_bonded_device_cb, remote_server_name);
+	if (ret != BT_ERROR_NONE)
+	    dlog_print(DLOG_ERROR, DRG_LOG_TAG, "[bt_adapter_foreach_bonded_device] failed!");
+
+	if (bt_server_address != NULL)
+	    free(bt_server_address);
+
 	/*
 	 * End of area
 	 */

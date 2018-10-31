@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <manifest xmlns="http://tizen.org/ns/packages" api-version="2.3.1" package="org.example.drgbtppg" version="1.0.0">
+    <author email="taoyil@uci.edu" href="https://duttgroup.ics.uci.edu/">Tao-Yi Lee</author>
     <profile name="wearable"/>
     <ui-application appid="org.example.drgbtppg" exec="drgbtppg" multiple="false" nodisplay="false" taskmanage="true" type="capp">
         <label>DRG BTPPG</label>
