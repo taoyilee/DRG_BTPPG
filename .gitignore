@@ -1,6 +1,7 @@
 /SA_Report/
 crash-info
-
+# author certificates
+*.sign
 # Prerequisites
 *.d
 
