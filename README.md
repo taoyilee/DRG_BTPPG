@@ -1,4 +1,39 @@
 # Dutt Research Group's Samsung Gear Fit 2 Pro Bluetooth Enabled PPG Logger 
+# Demo
+This app is an single view UI application built with Tizen UI editor. After installation, you will see an icon named "DRG BTPPG" in your app list:
+![](doc/app_install.JPG)
+
+To start an 1 minute data acquisition, click "Start/Stop." All available sensor data will be updated at 10 Hz refresh rate.
+The fields from top to bottom are: 
+Note: For more information, please visit [Tizen Device Sensors](https://developer.tizen.org/development/guides/native-application/location-and-sensors/device-sensors#accelerometer)
+
+1. Heart rate (BPM)
+2. Received intensity of PPG green LED  (Min. value = 0, Max. value = 1081216)
+3. Accelerometer (X) (in m/s^2)
+4. Accelerometer (Y) (in m/s^2)
+5. Accelerometer (Z) (in m/s^2)
+6. Gyroscope (X) (in Degrees/s (°/s))
+7. Gyroscope (Y) (in Degrees/s (°/s))
+8. Gyroscope (Z) (in Degrees/s (°/s))
+6.  Barometer, i.e. Air pressure (hPa (hectopascals))
+6. Gravity (X) (in m/s^2)
+7. Gravity (Y) (in m/s^2)
+8. Gravity (Z) (in m/s^2))
+
+![](doc/demo_action.JPG)
+
+## Definition of axes
+###For heart rate sensor:
+
+* The Heart Rate Monitor (HRM) LED green sensor measures the amount of green light that is reflected back from a person's blood vessel.
+
+###For accelerometer:
+
+![](doc/sensor_types_accelerometer_vector.png)
+
+###For gyroscope:
+
+![](doc/sensor_types_gyro_vector.png)
 
 # Quick Start
 ## Tizen Studio 
